@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#000000">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>Download EconLand</title>
+    <link rel="manifest" href="{{ url_for('manifest') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script>
+        let deferredPrompt = null;
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('{{ url_for("service_worker") }}')
+                    .catch((error) => {
+                        console.error('Service worker registration failed:', error);
+                        document.getElementById('installStatus').textContent =
+                            'PWA setup failed. Check the browser console and try again.';
+                    });
+            });
+        } else {
+            window.addEventListener('load', () => {
+                document.getElementById('installStatus').textContent =
+                    'This browser does not support PWA installation.';
+            });
+        }
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredPrompt = event;
+            document.getElementById('installStatus').textContent =
+                'Ready to install on this device.';
+        });
+
+        async function installPWA() {
+            if (!deferredPrompt) {
+                document.getElementById('installStatus').textContent =
+                    'If no install prompt appears, open your browser menu and choose Install app or Add to Home Screen. For local testing, use http://localhost:5000.';
+                return;
+            }
+
+            await deferredPrompt.prompt();
+            const choiceResult = await deferredPrompt.userChoice;
+            document.getElementById('installStatus').textContent =
+                choiceResult.outcome === 'accepted'
+                    ? 'EconLand was installed.'
+                    : 'Installation was cancelled.';
+            deferredPrompt = null;
+        }
+    </script>
+    <style>
+        .nav {
+            justify-content: left ;
+        }
+        .nav ol li {
+            color:white ;
+            font-size: larger;
+        }
+        .download-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px;
+        }
+        .download-actions a {
+            color: white;
+        }
+        #installStatus {
+            color: white;
+            padding: 0 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="main">
+        <div class="nav">
+            <h1>Download Latest Version</h1>
+            <ol type="1">
+                <li>There are no bugs</li>
+                <br>
+                <li>Most stable version </li>
+                <br>
+                <li>Good connectivity with the DataBase</li>
+                <br>
+                <li>Most supported Version</li>
+            </ol>
+        </div>
+        <div class="download-actions">
+            <button id="installButton" onclick="installPWA()">INSTALL PWA</button>
+            <p id="installStatus" aria-live="polite">Open this page in Chrome or Edge to install EconLand.</p>
+            {% if apk_available %}
+                <a href="{{ url_for('download_apk') }}">Download Android APK</a>
+            {% else %}
+                <span>Android APK is not available yet.</span>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>
+<!--Why isnt it working?-->
